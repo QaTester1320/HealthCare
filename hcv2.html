@@ -323,7 +323,7 @@
             const container = document.getElementById('stats-container');
             container.innerHTML = `
                 <div class="stat-card"><label>Global Patients</label><div class="stat-val">${db.patient.length}</div></div>
-                <div class="stat-card" style="border-color:var(--accent)"><label>Pharmacy Stock</label><div class="stat-val">${db.pharmacy.reduce((acc, i) => acc + parseInt(i.qty || 0), 0)} Units</div></div>
+                <div class="stat-card" style="border-color: #c02525;"><label>Pharmacy Stock</label><div class="stat-val">${db.pharmacy.reduce((acc, i) => acc + parseInt(i.qty || 0), 0)} Units</div></div>
                 <div class="stat-card"><label>Total Billing</label><div class="stat-val">$${db.billing.reduce((acc, i) => acc + parseInt(i.total || 0), 0)}</div></div>
             `;
         }
