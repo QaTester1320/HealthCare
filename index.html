@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthStack Enterprise | Professional HIS Sandbox</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface-hover: #2a2a2a;
+            --primary: #5c8d89;
+            --secondary: #748da6;
+            --accent: #916b6b;
+            --text: #e0e0e0;
+            --text-dim: #888888;
+            --border: #333333;
+            --font: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; overflow: hidden; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 280px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 25px; font-weight: bold; font-size: 1.1rem; color: var(--primary); border-bottom: 1px solid var(--border); text-align: center; }
+        .nav-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .nav-item { padding: 10px 15px; border-radius: 6px; cursor: pointer; color: var(--text-dim); transition: 0.2s; margin-bottom: 2px; display: flex; align-items: center; font-size: 0.85rem; }
+        .nav-item:hover { background: var(--surface-hover); color: var(--text); }
+        .nav-item.active { background: var(--primary); color: white; font-weight: 600; }
+
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-bar { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .search-box { background: var(--bg); border: 1px solid var(--border); color: white; padding: 8px 15px; border-radius: 4px; width: 350px; outline: none; }
+        .content-area { flex: 1; padding: 25px; overflow-y: auto; }
+
+        /* Tables */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; color: var(--primary); padding: 12px; border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; white-space: nowrap; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; white-space: nowrap; }
+
+        /* Modal Overlay */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .modal { background: var(--surface); width: 80%; max-width: 900px; max-height: 90vh; border-radius: 8px; border: 1px solid var(--border); padding: 25px; overflow-y: auto; }
+        
+        /* Expanded Form Grid */
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 10px; color: white; border-radius: 4px; font-size: 0.85rem; }
+        .full-width { grid-column: span 3; }
+
+        .btn { padding: 8px 18px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-edit { border: 1px solid var(--secondary); color: var(--secondary); background: transparent; margin-right: 5px; }
+        .btn-delete { border: 1px solid var(--accent); color: var(--accent); background: transparent; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--surface); padding: 15px; border-radius: 6px; border-bottom: 3px solid var(--primary); }
+        .stat-val { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">HEALTHSTACK ULTIMATE</div>
+        <nav class="nav-list" id="main-nav"></nav>
+    </aside>
+
+    <main class="main">
+        <header class="top-bar">
+            <h2 id="active-title">Dashboard</h2>
+            <input type="text" class="search-box" placeholder="Search records..." onkeyup="filterTable(this.value)">
+        </header>
+
+        <div class="content-area">
+            <div id="dash-view">
+                <div class="stats-grid" id="stats-container"></div>
+            </div>
+
+            <div id="common-view" style="display: none;">
+                <div class="card">
+                    <div class="table-header">
+                        <h3 id="table-title">Records</h3>
+                        <button class="btn btn-add" onclick="openModal()">+ Add New Case</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead id="thead"></thead>
+                            <tbody id="tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3 id="modalTitle" style="margin-bottom: 20px; color: var(--primary);">Form</h3>
+            <form id="recordForm">
+                <div id="formFields" class="form-grid"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-add">Submit to Database</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modules = {
+            dash: { title: "Executive Dashboard", isDash: true },
+            patient: { 
+                title: "Patient Registration", 
+                cols: ["ID", "Name", "Type", "Age", "Gender", "Blood Group", "Mobile", "Email", "Address", "Emergency Contact"], 
+                fields: ["Name", "Type|select|OPD,IPD", "Age|number", "Gender|select|Male,Female,Other", "Blood Group|select|A+,A-,B+,B-,O+,O-,AB+,AB-", "Mobile", "Email", "Address|text", "Emerg_Contact"] 
+            },
+            opd: { 
+                title: "Out-Patient (OPD)", 
+                cols: ["VisitID", "Patient", "Consulting Doctor", "Department", "Symptoms", "Vitals", "Consultation Fee", "Visit Date"], 
+                fields: ["Patient|link|patient", "Doctor", "Dept|select|General,Cardiology,Orthopedic,ENT,Dental", "Symptoms", "Vitals_BP_Temp", "Fee|number", "Visit_Date|date"] 
+            },
+            ipd: { 
+                title: "In-Patient (IPD)", 
+                cols: ["AdmissionID", "Patient", "Ward Name", "Bed Number", "Admitting Doctor", "Admission Date", "Advance Paid", "Relative Name"], 
+                fields: ["Patient|link|patient", "Ward|select|General,Semi-Private,Private,Deluxe,ICU,NICU", "Bed_No", "Doctor", "Date|date", "Advance|number", "Relative"] 
+            },
+            emergency: { 
+                title: "Emergency / Trauma", 
+                cols: ["CaseID", "Patient Name", "Triage Level", "Injury Type", "Brought By", "Police Case", "Arrival Time"], 
+                fields: ["Patient", "Triage|select|Red (Critical),Yellow (Urgent),Green (Non-Urgent)", "Injury", "Brought_By", "MLC|select|No,Yes", "Time|time"] 
+            },
+            ot: { 
+                title: "Surgery & OT", 
+                cols: ["OT_ID", "Patient", "Surgery Type", "Surgeon Name", "Anesthetist", "OT Room", "Scheduled Time", "Duration"], 
+                fields: ["Patient|link|patient", "Surgery", "Surgeon", "Anesthetist", "OT_Room|select|OT-1,OT-2,Cardiac-OT", "Date|date", "Duration_Hrs"] 
+            },
+            lab: { 
+                title: "Lab & Pathology", 
+                cols: ["LabID", "Patient", "Test Category", "Test Name", "Sample Date", "Lab Technician", "Urgency", "Status"], 
+                fields: ["Patient|link|patient", "Category|select|Biochemistry,Hematology,Microbiology", "Test_Name", "Date|date", "Technician", "Urgency|select|Routine,Stat", "Status|select|Pending,Collected,Processing,Reported"] 
+            },
+            radio: { 
+                title: "Radiology / Imaging", 
+                cols: ["RadioID", "Patient", "Modality", "Body Part", "Radiologist", "Contrast Used", "Scan Date", "Status"], 
+                fields: ["Patient|link|patient", "Modality|select|X-Ray,MRI,CT Scan,Ultrasound", "Part", "Radiologist", "Contrast|select|No,Yes", "Date|date", "Status|select|Awaiting Scan,Scanning,Reviewing,Released"] 
+            },
+            pharmacy: { 
+                title: "Pharmacy & Inventory", 
+                cols: ["Batch", "Medicine Name", "Generic Name", "Manufacturer", "Stock Qty", "Unit Price", "Expiry Date", "Storage Temp"], 
+                fields: ["Batch", "Med_Name", "Generic", "Company", "Qty|number", "Price|number", "Expiry|date", "Temp|select|Room,Cold Storage"] 
+            },
+            blood: { 
+                title: "Blood Bank", 
+                cols: ["Unit_ID", "Blood Group", "Bags Count", "Donor Name", "Collection Date", "Screening Result", "Expiry", "RH Factor"], 
+                fields: ["Group|select|A+,B+,O+,AB+,A-,B-,O-,AB-", "Bags|number", "Donor", "Date|date", "Screening|select|Clear,Reactive", "Expiry|date", "RH|select|Positive,Negative"] 
+            },
+            billing: { 
+                title: "Billing & Insurance", 
+                cols: ["BillID", "Patient", "Total Bill", "Discount", "Tax", "Payable", "Payment Mode", "TPA/Insurance Provider", "Claim Status"], 
+                fields: ["Patient|link|patient", "Total|number", "Discount|number", "Tax|number", "Mode|select|Cash,Card,UPI,Insurance", "TPA|select|None,Star Health,Cigna,MaxBupa", "Status|select|Unpaid,Partial,Paid,Settled"] 
+            },
+            dietary: { 
+                title: "Kitchen & Dietary", 
+                cols: ["DietID", "Patient", "Meal Plan", "Allergies", "Morning Serve", "Evening Serve", "Nutritional Specialist"], 
+                fields: ["Patient|link|patient", "Plan|select|Regular,Liquid,Soft,Diabetic,High Protein", "Allergies", "Morning", "Evening", "Specialist"] 
+            },
+            ambulance: { 
+                title: "Ambulance / Dispatch", 
+                cols: ["TripID", "Vehicle Number", "Driver Name", "Equipment Level", "Destination", "Current Status", "Odometer Start"], 
+                fields: ["Vehicle", "Driver", "Equip|select|Basic Life Support,Advanced Cardiac Support", "Destination", "Status|select|Available,In-Transit,Maintenance", "Odo|number"] 
+            },
+            inventory: { 
+                title: "Hospital Assets", 
+                cols: ["AssetCode", "Item Name", "Category", "Department", "Maintenance Date", "Supplier", "Warranty Expiry"], 
+                fields: ["Code", "Item", "Category|select|Surgical,Electronic,Furniture", "Dept", "Maint_Date|date", "Supplier", "Warranty|date"] 
+            },
+            hr: { 
+                title: "Human Resources", 
+                cols: ["Staff_ID", "Full Name", "Designation", "Department", "Qualification", "Joining Date", "Shift Timing", "Salary Grade"], 
+                fields: ["Name", "Role|select|Specialist Doctor,Resident Doctor,Staff Nurse,Admin,Technician", "Dept", "Education", "Join_Date|date", "Shift|select|Morning,Evening,Night,Rotational", "Grade"] 
+            }
+        };
+
+        let currentModule = 'dash';
+        let db = {}; 
+        Object.keys(modules).forEach(m => db[m] = []);
+        let editIndex = -1;
+
+        function initNav() {
+            const nav = document.getElementById('main-nav');
+            Object.keys(modules).forEach(m => {
+                const div = document.createElement('div');
+                div.className = `nav-item ${m==='dash'?'active':''}`;
+                div.innerHTML = modules[m].title;
+                div.onclick = (e) => switchModule(m, e);
+                nav.appendChild(div);
+            });
+            updateStats();
+        }
+
+        function switchModule(key, e) {
+            currentModule = key;
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById('active-title').innerText = modules[key].title;
+
+            if(modules[key].isDash) {
+                document.getElementById('dash-view').style.display = 'block';
+                document.getElementById('common-view').style.display = 'none';
+                updateStats();
+            } else {
+                document.getElementById('dash-view').style.display = 'none';
+                document.getElementById('common-view').style.display = 'block';
+                renderTable();
+            }
+        }
+
+        function renderTable() {
+            const mod = modules[currentModule];
+            document.getElementById('table-title').innerText = mod.title + " Management";
+            
+            let h = "<tr>";
+            mod.cols.forEach(c => h += `<th>${c}</th>`);
+            h += "<th>Action</th></tr>";
+            document.getElementById('thead').innerHTML = h;
+
+            let b = "";
+            db[currentModule].forEach((row, i) => {
+                b += "<tr>";
+                Object.values(row).forEach(v => b += `<td>${v}</td>`);
+                b += `<td>
+                    <button class="btn btn-edit" onclick="openModal(${i})">Edit</button>
+                    <button class="btn btn-delete" onclick="deleteRec(${i})">Delete</button>
+                </td></tr>`;
+            });
+            document.getElementById('tbody').innerHTML = b || "<tr><td colspan='20' style='text-align:center;color:#555;padding:60px;'>Ready for Automation Testing. No data in this module.</td></tr>";
+        }
+
+        function openModal(idx = -1) {
+            editIndex = idx;
+            const mod = modules[currentModule];
+            document.getElementById('modalTitle').innerText = (idx > -1 ? "Update " : "Register ") + mod.title;
+            
+            let html = "";
+            mod.fields.forEach(f => {
+                const [label, type, opts] = f.split('|');
+                const val = idx > -1 ? Object.values(db[currentModule][idx])[mod.fields.indexOf(f) + 1] : "";
+
+                html += `<div class="form-group"><label>${label.replace('_', ' ')}</label>`;
+                if(type === 'select') {
+                    html += `<select id="f-${label}">` + opts.split(',').map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('') + `</select>`;
+                } else if(type === 'link') {
+                    const patients = db['patient'].map(p => p.name);
+                    html += `<select id="f-${label}">` + (patients.length ? patients.map(p => `<option ${val===p?'selected':''}>${p}</option>`).join('') : '<option>No Patients Found</option>') + `</select>`;
+                } else {
+                    html += `<input type="${type||'text'}" id="f-${label}" value="${val}">`;
+                }
+                html += `</div>`;
+            });
+
+            document.getElementById('formFields').innerHTML = html;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+        document.getElementById('recordForm').onsubmit = (e) => {
+            e.preventDefault();
+            const mod = modules[currentModule];
+            let row = {};
+
+            // Generate System IDs
+            const idPrefix = currentModule.toUpperCase().substring(0,3);
+            row.id = editIndex > -1 ? db[currentModule][editIndex].id : idPrefix + "-" + Math.floor(1000 + Math.random() * 9000);
+
+            mod.fields.forEach(f => {
+                const label = f.split('|')[0];
+                row[label.toLowerCase()] = document.getElementById(`f-${label}`).value;
+            });
+
+            if(editIndex > -1) db[currentModule][editIndex] = row;
+            else db[currentModule].push(row);
+
+            closeModal();
+            renderTable();
+        };
+
+        function deleteRec(i) {
+            if(confirm("Confirm: Delete this clinical record from server?")) {
+                db[currentModule].splice(i, 1);
+                renderTable();
+            }
+        }
+
+        function updateStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="stat-card"><label>Total OPD Visitors</label><div class="stat-val">${db.opd.length}</div></div>
+                <div class="stat-card"><label>Active IPD Beds</label><div class="stat-val">${db.ipd.length}</div></div>
+                <div class="stat-card"><label>ER/Trauma Cases</label><div class="stat-val">${db.emergency.length}</div></div>
+                <div class="stat-card"><label>Critical Lab Orders</label><div class="stat-val">${db.lab.length}</div></div>
+            `;
+        }
+
+        function filterTable(val) {
+            const rows = document.querySelectorAll("#tbody tr");
+            rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(val.toLowerCase()) ? "" : "none");
+        }
+
+        window.onload = initNav;
+    </script>
+</body>
+</html>
