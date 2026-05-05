@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthStack Infinite | Full-Spectrum Enterprise HIS</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface-hover: #2a2a2a;
+            --primary: #5c8d89;
+            --secondary: #748da6;
+            --accent: #916b6b;
+            --text: #e0e0e0;
+            --text-dim: #888888;
+            --border: #333333;
+            --font: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; overflow: hidden; height: 100vh; }
+
+        /* Sidebar - Final List of All Enterprise Modules */
+        .sidebar { width: 300px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 25px; font-weight: bold; font-size: 1.1rem; color: var(--primary); border-bottom: 1px solid var(--border); text-align: center; letter-spacing: 1px; }
+        .nav-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .nav-item { padding: 12px 15px; border-radius: 6px; cursor: pointer; color: var(--text-dim); transition: 0.2s; margin-bottom: 2px; display: flex; align-items: center; font-size: 0.85rem; }
+        .nav-item:hover { background: var(--surface-hover); color: var(--text); }
+        .nav-item.active { background: var(--primary); color: white; font-weight: 600; }
+
+        /* Main Content Area */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-bar { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .search-box { background: var(--bg); border: 1px solid var(--border); color: white; padding: 8px 15px; border-radius: 4px; width: 350px; outline: none; }
+        .content-area { flex: 1; padding: 25px; overflow-y: auto; }
+
+        /* Tables and Records */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th { text-align: left; color: var(--primary); padding: 12px; border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; white-space: nowrap; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; white-space: nowrap; }
+
+        /* Modal / Form System */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .modal { background: var(--surface); width: 85%; max-width: 1000px; max-height: 90vh; border-radius: 8px; border: 1px solid var(--border); padding: 25px; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 10px; color: white; border-radius: 4px; font-size: 0.85rem; }
+
+        /* UI Buttons */
+        .btn { padding: 8px 18px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-edit { border: 1px solid var(--secondary); color: var(--secondary); background: transparent; margin-right: 5px; }
+        .btn-delete { border: 1px solid var(--accent); color: var(--accent); background: transparent; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--surface); padding: 15px; border-radius: 6px; border-bottom: 3px solid var(--primary); }
+        .stat-val { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">HEALTHSTACK INFINITE</div>
+        <nav class="nav-list" id="main-nav"></nav>
+    </aside>
+
+    <main class="main">
+        <header class="top-bar">
+            <h2 id="active-title">Hospital Ecosystem</h2>
+            <input type="text" class="search-box" placeholder="Deep search database..." onkeyup="filterTable(this.value)">
+        </header>
+
+        <div class="content-area">
+            <div id="dash-view">
+                <div class="stats-grid" id="stats-container"></div>
+                <div class="card">
+                    <h3>Enterprise System Status</h3>
+                    <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 10px;">All modules are currently interconnected via the Patient Registry layer.</p>
+                </div>
+            </div>
+
+            <div id="common-view" style="display: none;">
+                <div class="card">
+                    <div class="table-header">
+                        <h3 id="table-title">Case Files</h3>
+                        <button class="btn btn-add" onclick="openModal()">+ Add Detailed Entry</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead id="thead"></thead>
+                            <tbody id="tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3 id="modalTitle" style="margin-bottom: 20px; color: var(--primary);">Data Entry</h3>
+            <form id="recordForm">
+                <div id="formFields" class="form-grid"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                    <button type="button" class="btn" onclick="closeModal()">Close</button>
+                    <button type="submit" class="btn btn-add">Save to Cloud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modules = {
+            dash: { title: "Executive Dashboard", isDash: true },
+            patient: { 
+                title: "Patient Registry", 
+                cols: ["ID", "Name", "Type", "Age", "Gender", "Blood Group", "Mobile", "Email", "Address", "Aadhar/ID"], 
+                fields: ["Name", "Type|select|OPD,IPD", "Age|number", "Gender|select|Male,Female,Other", "Blood Group|select|A+,A-,B+,B-,O+,O-,AB+,AB-", "Mobile", "Email", "Address", "Gov_ID"] 
+            },
+            opd: { title: "OPD/Consultation", cols: ["VisitID", "Patient", "Doctor", "Dept", "Symptoms", "Vitals", "Fee", "Date"], fields: ["Patient|link|patient", "Doctor", "Dept|select|General,Cardio,ENT", "Symptoms", "Vitals", "Fee|number", "Date|date"] },
+            ipd: { title: "IPD Admissions", cols: ["AdmID", "Patient", "Ward", "Bed", "Doctor", "Date", "Advance", "Guardian"], fields: ["Patient|link|patient", "Ward|select|General,ICU,NICU", "Bed", "Doctor", "Date|date", "Advance|number", "Guardian"] },
+            emergency: { title: "Emergency/Trauma", cols: ["ERID", "Patient", "Triage", "Injury", "BroughtBy", "Arrival"], fields: ["Patient", "Triage|select|Red,Yellow,Green", "Injury", "BroughtBy", "Time|time"] },
+            ot: { title: "Operation Theater", cols: ["OTID", "Patient", "Surgery", "Surgeon", "Room", "Anesthetist", "Status"], fields: ["Patient|link|patient", "Surgery", "Surgeon", "Room|select|OT-1,OT-2", "Anesthetist", "Status|select|Scheduled,In-Progress,Completed"] },
+            lab: { title: "Lab/Pathology", cols: ["LabID", "Patient", "Category", "Test", "Technician", "Status"], fields: ["Patient|link|patient", "Category|select|Blood,Urine,Tissue", "Test", "Technician", "Status|select|Pending,Completed"] },
+            radio: { title: "Radiology/Imaging", cols: ["RadID", "Patient", "Modality", "Part", "Radiologist", "Contrast"], fields: ["Patient|link|patient", "Modality|select|X-Ray,MRI,CT", "Part", "Radiologist", "Contrast|select|No,Yes"] },
+            pharmacy: { title: "Pharmacy/Drugs", cols: ["Batch", "Name", "Generic", "Qty", "Price", "Expiry"], fields: ["Batch", "Name", "Generic", "Qty|number", "Price|number", "Expiry|date"] },
+            blood: { title: "Blood Bank", cols: ["UnitID", "Group", "Bags", "Donor", "Expiry", "Result"], fields: ["Group|select|A+,B+,O+,AB+,A-,B-,O-,AB-", "Bags|number", "Donor", "Expiry|date", "Result|select|Clear,Reactive"] },
+            billing: { title: "Billing/TPA", cols: ["BillID", "Patient", "Total", "Discount", "Mode", "TPA", "Status"], fields: ["Patient|link|patient", "Total|number", "Discount|number", "Mode|select|Cash,Card,UPI,TPA", "TPA|select|None,Cigna,Star", "Status|select|Unpaid,Paid"] },
+            
+            // NEW MODULES ADDED BELOW
+            birth: { 
+                title: "Birth Records", 
+                cols: ["ID", "Mother Name", "Father Name", "Baby Gender", "Birth Weight", "Date", "Time", "Doctor"], 
+                fields: ["Mother", "Father", "Gender|select|Male,Female", "Weight_KG", "Date|date", "Time|time", "Doctor"] 
+            },
+            death: { 
+                title: "Death Records", 
+                cols: ["ID", "Patient Name", "Guardian", "Cause", "Date", "Time", "Doctor Certified"], 
+                fields: ["Patient|link|patient", "Guardian", "Cause", "Date|date", "Time|time", "Doctor"] 
+            },
+            vaccine: { 
+                title: "Immunization", 
+                cols: ["ID", "Patient", "Vaccine Name", "Dose No", "Manufacturer", "Batch", "Next Due Date"], 
+                fields: ["Patient|link|patient", "Vaccine", "Dose|select|1st,2nd,Booster", "Manufacturer", "Batch", "Next_Due|date"] 
+            },
+            referral: { 
+                title: "Referral Tracking", 
+                cols: ["ID", "Patient", "Referral From", "Referral To", "Comm %", "Status"], 
+                fields: ["Patient|link|patient", "From_Doctor", "To_Hospital", "Commission|number", "Status|select|Pending,Admitted"] 
+            },
+            cssd: { 
+                title: "CSSD (Sterilization)", 
+                cols: ["ID", "Item Name", "Sterile Type", "Last Batch", "Operator", "Expiry Date"], 
+                fields: ["Item", "Type|select|Autoclave,Chemical", "Batch", "Operator", "Expiry|date"] 
+            },
+            visitor: { 
+                title: "Visitor/Front Office", 
+                cols: ["PassID", "Visitor Name", "Patient To Visit", "Relation", "Gate No", "In-Time", "Out-Time"], 
+                fields: ["Visitor", "Patient|link|patient", "Relation", "Gate|select|Gate-1,Emergency-Gate", "In|time", "Out|time"] 
+            },
+            quality: { 
+                title: "Quality/Compliance", 
+                cols: ["IncidentID", "Category", "Department", "Description", "Risk Level", "Assigned To"], 
+                fields: ["Category|select|Medical Error,Equipment Failure,Slip/Fall", "Dept", "Description", "Risk|select|Low,High,Critical", "Assigned"] 
+            },
+            feedback: { 
+                title: "Grievance/Feedback", 
+                cols: ["ID", "Patient", "Rating", "Comments", "Status", "Resolution"], 
+                fields: ["Patient|link|patient", "Rating|select|5-Excellent,4-Good,3-Average,2-Poor,1-Very Poor", "Comments", "Status|select|Open,Resolved", "Resolution"] 
+            },
+
+            // ORIGINAL SYSTEM MODULES KEPT
+            dietary: { title: "Kitchen/Dietary", cols: ["DietID", "Patient", "Plan", "Allergies", "Morning", "Specialist"], fields: ["Patient|link|patient", "Plan|select|Regular,Liquid,Diabetic", "Allergies", "Morning", "Specialist"] },
+            ambulance: { title: "Ambulance/Fleet", cols: ["TripID", "Vehicle", "Driver", "Dest", "Status", "Odo"], fields: ["Vehicle", "Driver", "Dest", "Status|select|Available,In-Trip", "Odo|number"] },
+            inventory: { title: "Hospital Assets", cols: ["AssetID", "Item", "Cat", "Dept", "Maint", "Warranty"], fields: ["Item", "Cat|select|Surgical,Electronic", "Dept", "Maint|date", "Warranty|date"] },
+            hr: { title: "Staff/HR", cols: ["StaffID", "Name", "Role", "Dept", "JoinDate", "Salary"], fields: ["Name", "Role|select|Doctor,Nurse,Admin", "Dept", "JoinDate|date", "Salary|number"] }
+        };
+
+        let currentModule = 'dash';
+        let db = {}; 
+        Object.keys(modules).forEach(m => db[m] = []);
+        let editIndex = -1;
+
+        function initNav() {
+            const nav = document.getElementById('main-nav');
+            Object.keys(modules).forEach(m => {
+                const div = document.createElement('div');
+                div.className = `nav-item ${m==='dash'?'active':''}`;
+                div.innerHTML = modules[m].title;
+                div.onclick = (e) => switchModule(m, e);
+                nav.appendChild(div);
+            });
+            updateStats();
+        }
+
+        function switchModule(key, e) {
+            currentModule = key;
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById('active-title').innerText = modules[key].title;
+
+            if(modules[key].isDash) {
+                document.getElementById('dash-view').style.display = 'block';
+                document.getElementById('common-view').style.display = 'none';
+                updateStats();
+            } else {
+                document.getElementById('dash-view').style.display = 'none';
+                document.getElementById('common-view').style.display = 'block';
+                renderTable();
+            }
+        }
+
+        function renderTable() {
+            const mod = modules[currentModule];
+            document.getElementById('table-title').innerText = mod.title + " Management";
+            let h = "<tr>";
+            mod.cols.forEach(c => h += `<th>${c}</th>`);
+            h += "<th>Action</th></tr>";
+            document.getElementById('thead').innerHTML = h;
+
+            let b = "";
+            db[currentModule].forEach((row, i) => {
+                b += "<tr>";
+                Object.values(row).forEach(v => b += `<td>${v}</td>`);
+                b += `<td>
+                    <button class="btn btn-edit" onclick="openModal(${i})">Edit</button>
+                    <button class="btn btn-delete" onclick="deleteRec(${i})">Delete</button>
+                </td></tr>`;
+            });
+            document.getElementById('tbody').innerHTML = b || "<tr><td colspan='20' style='text-align:center;color:#555;padding:60px;'>No records found. Perfect for testing database population.</td></tr>";
+        }
+
+        function openModal(idx = -1) {
+            editIndex = idx;
+            const mod = modules[currentModule];
+            document.getElementById('modalTitle').innerText = (idx > -1 ? "Update " : "New ") + mod.title;
+            
+            let html = "";
+            mod.fields.forEach(f => {
+                const [label, type, opts] = f.split('|');
+                const val = idx > -1 ? Object.values(db[currentModule][idx])[mod.fields.indexOf(f) + 1] : "";
+
+                html += `<div class="form-group"><label>${label.replace('_', ' ')}</label>`;
+                if(type === 'select') {
+                    html += `<select id="f-${label}">` + opts.split(',').map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('') + `</select>`;
+                } else if(type === 'link') {
+                    const patients = db['patient'].map(p => p.name);
+                    html += `<select id="f-${label}">` + (patients.length ? patients.map(p => `<option ${val===p?'selected':''}>${p}</option>`).join('') : '<option>No Patients Registered</option>') + `</select>`;
+                } else {
+                    html += `<input type="${type||'text'}" id="f-${label}" value="${val}">`;
+                }
+                html += `</div>`;
+            });
+
+            document.getElementById('formFields').innerHTML = html;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+        document.getElementById('recordForm').onsubmit = (e) => {
+            e.preventDefault();
+            const mod = modules[currentModule];
+            let row = {};
+            const prefix = currentModule.toUpperCase().substring(0,3);
+            row.id = editIndex > -1 ? db[currentModule][editIndex].id : prefix + "-" + Math.floor(1000 + Math.random() * 9000);
+
+            mod.fields.forEach(f => {
+                const label = f.split('|')[0];
+                row[label.toLowerCase()] = document.getElementById(`f-${label}`).value;
+            });
+
+            if(editIndex > -1) db[currentModule][editIndex] = row;
+            else db[currentModule].push(row);
+
+            closeModal();
+            renderTable();
+        };
+
+        function deleteRec(i) {
+            if(confirm("Confirm deletion from healthcare database?")) {
+                db[currentModule].splice(i, 1);
+                renderTable();
+            }
+        }
+
+        function updateStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="stat-card"><label>Total Registered Patients</label><div class="stat-val">${db.patient.length}</div></div>
+                <div class="stat-card"><label>Births This Month</label><div class="stat-val">${db.birth.length}</div></div>
+                <div class="stat-card"><label>Open Grievances</label><div class="stat-val">${db.feedback.length}</div></div>
+                <div class="stat-card"><label>Total Staff</label><div class="stat-val">${db.hr.length}</div></div>
+            `;
+        }
+
+        function filterTable(val) {
+            const rows = document.querySelectorAll("#tbody tr");
+            rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(val.toLowerCase()) ? "" : "none");
+        }
+
+        window.onload = initNav;
+    </script>
+</body>
+</html>
