@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthStack Infinite | Enterprise HIMS with CDSS</title>
+    <style>
+        :root {
+            --bg: #faf8f8;
+            --surface: #b8e7e8;
+            --surface-hover: #048085;
+            --primary: #5c8d89;
+            --secondary: #748da6;
+            --accent: #916b6b;
+            --warning: #b38f4d;
+            --text: #e0e0e0;
+            --text-dim: #888888;
+            --border: #333333;
+            --font: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #fcfcfc; color: var(--text); font-family: var(--font); display: flex; overflow: hidden; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 300px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+       .sidebar-header {
+    padding: 25px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #e70f0f;
+    border-bottom: 2px solid var(--border);
+    text-align: center;
+}
+        .nav-list { flex: 1; overflow-y: auto; padding: 10px; }
+.nav-item {
+    padding: 12px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #fff;
+    transition: 0.2s;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    font-size: 0.95 rem;
+}
+        .nav-item:hover { background: var(--surface-hover); color: var(--text); }
+       .nav-item.active {
+    background: #1be7d7;
+    color: black;
+    font-weight: 700;
+}
+
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-bar { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .search-box { background: var(--bg); border: 1px solid var(--border); color: white; padding: 8px 15px; border-radius: 4px; width: 350px; outline: none; }
+        .content-area { flex: 1; padding: 25px; overflow-y: auto; }
+
+        /* Alerts & UI Elements */
+        .alert-box { background: var(--warning); color: black; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; font-weight: 600; border-left: 5px solid #000; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+th {
+    text-align: left;
+    color: #66d1c8;
+    padding: 12px;
+    border-bottom: 2px solid var(--border);
+    font-size: 1 rem;
+    text-transform: uppercase;
+}
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+
+        /* Modal System */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .modal { background: var(--surface); width: 85%; max-width: 1100px; max-height: 90vh; border-radius: 8px; border: 1px solid var(--border); padding: 25px; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 10px; color: white; border-radius: 4px; font-size: 0.85rem; }
+
+        /* Timeline UI */
+        .timeline-item { border-left: 2px solid var(--primary); padding-left: 20px; position: relative; margin-bottom: 20px; }
+        .timeline-item::before { content: ""; position: absolute; left: -7px; top: 0; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; }
+        .time-tag { font-size: 0.7rem; color: var(--primary); font-weight: bold; }
+
+        .btn { padding: 8px 18px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s; }
+        .btn-add {
+    background: #f8f5f4;
+    color: #000000;
+}
+        .btn-edit { border: 1px solid var(--secondary); color: var(--secondary); background: transparent; margin-right: 5px; }
+        .btn-delete { border: 1px solid var(--accent); color: var(--accent); background: transparent; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+      .stat-card {
+    background: #f6f3f3;
+    padding: 15px;
+    border-radius: 6px;
+    border-bottom: 4px solid #28d0c2;
+}
+        .stat-val { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: #f3e8e8; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">HEALTHSTACK INFINITE</div>
+        <nav class="nav-list" id="main-nav"></nav>
+    </aside>
+
+    <main class="main">
+        <header class="top-bar">
+            <h2 id="active-title">System Dashboard</h2>
+            <input type="text" class="search-box" placeholder="Search global database..." onkeyup="filterTable(this.value)">
+        </header>
+
+        <div class="content-area">
+            <div id="smart-alert" class="alert-box"></div>
+
+            <div id="dash-view">
+                <div class="stats-grid" id="stats-container"></div>
+                <div class="card">
+                    <h3>Smart System Triggers Active</h3>
+                    <ul style="margin: 15px; color: var(--text-dim); font-size: 0.85rem; line-height: 1.6;">
+                        <li><b>CDSS:</b> Automatic Allergy Checking between Pharmacy & Patient profiles.</li>
+                        <li><b>Auto-Sync:</b> Pharmacy stock decreases automatically on Billing.</li>
+                        <li><b>Interoperability:</b> All 25+ modules share a unified Patient ID pool.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="common-view" style="display: none;">
+                <div class="card">
+                    <div class="table-header">
+                        <h3 id="table-title">Records</h3>
+                        <button class="btn btn-add" onclick="openModal()">+ Add New Entry</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead id="thead"></thead>
+                            <tbody id="tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Timeline View (EMR) -->
+            <div id="timeline-view" style="display: none;">
+                <div class="card">
+                    <h3>Patient 360° Chronological Timeline</h3>
+                    <div id="timeline-content" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3 id="modalTitle" style="margin-bottom: 20px; color: var(--primary);">Clinical Form</h3>
+            <form id="recordForm">
+                <div id="formFields" class="form-grid"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                    <button type="button" class="btn" onclick="closeModal()">Close</button>
+                    <button type="submit" class="btn btn-add">Commit Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modules = {
+            dash: { title: "Executive Dashboard", isDash: true },
+            patient: { 
+                title: "Patient Registry", 
+                cols: ["ID", "Name", "Type", "Age", "Gender", "Blood Group", "Mobile", "Allergies", "Address", "Gov_ID"], 
+                fields: ["Name", "Type|select|OPD,IPD", "Age|number", "Gender|select|Male,Female,Other", "Blood Group|select|A+,A-,B+,B-,O+,O-,AB+,AB-", "Mobile", "Allergies|text", "Address", "Gov_ID"] 
+            },
+            opd: { title: "OPD/Consultation", cols: ["VisitID", "Patient", "Doctor", "Dept", "Symptoms", "Vitals", "Fee", "Date"], fields: ["Patient|link|patient", "Doctor", "Dept|select|General,Cardio,ENT", "Symptoms", "Vitals", "Fee|number", "Date|date"] },
+            ipd: { title: "IPD Admissions", cols: ["AdmID", "Patient", "Ward", "Bed", "Doctor", "Date", "Advance", "Guardian"], fields: ["Patient|link|patient", "Ward|select|General,ICU,NICU", "Bed", "Doctor", "Date|date", "Advance|number", "Guardian"] },
+            emergency: { title: "Emergency/Trauma", cols: ["ERID", "Patient", "Triage", "Injury", "BroughtBy", "Arrival"], fields: ["Patient", "Triage|select|Red,Yellow,Green", "Injury", "BroughtBy", "Time|time"] },
+            ot: { title: "Operation Theater", cols: ["OTID", "Patient", "Surgery", "Surgeon", "Room", "Anesthetist", "Status"], fields: ["Patient|link|patient", "Surgery", "Surgeon", "Room|select|OT-1,OT-2", "Anesthetist", "Status|select|Scheduled,In-Progress,Completed"] },
+            lab: { title: "Lab/Pathology", cols: ["LabID", "Patient", "Category", "Test", "Technician", "Status"], fields: ["Patient|link|patient", "Category|select|Blood,Urine,Tissue", "Test", "Technician", "Status|select|Pending,Completed"] },
+            radio: { title: "Radiology/Imaging", cols: ["RadID", "Patient", "Modality", "Part", "Radiologist", "Contrast"], fields: ["Patient|link|patient", "Modality|select|X-Ray,MRI,CT", "Part", "Radiologist", "Contrast|select|No,Yes"] },
+            pharmacy: { title: "Pharmacy/Drugs", cols: ["Batch", "Name", "Generic", "Qty", "Price", "Expiry"], fields: ["Batch", "Name", "Generic", "Qty|number", "Price|number", "Expiry|date"] },
+            blood: { title: "Blood Bank", cols: ["UnitID", "Group", "Bags", "Donor", "Expiry", "Result"], fields: ["Group|select|A+,B+,O+,AB+,A-,B-,O-,AB-", "Bags|number", "Donor", "Expiry|date", "Result|select|Clear,Reactive"] },
+            billing: { title: "Billing/TPA", cols: ["BillID", "Patient", "Item/Med", "Total", "Mode", "TPA", "Status"], fields: ["Patient|link|patient", "Item|link|pharmacy", "Total|number", "Mode|select|Cash,Card,UPI,TPA", "TPA|select|None,Cigna,Star", "Status|select|Unpaid,Paid"] },
+            birth: { title: "Birth Records", cols: ["ID", "Mother", "Father", "Gender", "Weight", "Date", "Time", "Doctor"], fields: ["Mother", "Father", "Gender|select|Male,Female", "Weight", "Date|date", "Time|time", "Doctor"] },
+            death: { title: "Death Records", cols: ["ID", "Patient", "Guardian", "Cause", "Date", "Time", "Doctor"], fields: ["Patient|link|patient", "Guardian", "Cause", "Date|date", "Time|time", "Doctor"] },
+            vaccine: { title: "Immunization", cols: ["ID", "Patient", "Vaccine", "Dose", "Manufacturer", "Batch", "Next_Due"], fields: ["Patient|link|patient", "Vaccine", "Dose|select|1st,2nd,Booster", "Manufacturer", "Batch", "Next_Due|date"] },
+            referral: { title: "Referral Tracking", cols: ["ID", "Patient", "From", "To", "Comm", "Status"], fields: ["Patient|link|patient", "From", "To", "Comm|number", "Status|select|Pending,Admitted"] },
+            cssd: { title: "CSSD Sterilization", cols: ["ID", "Item", "Type", "Batch", "Operator", "Expiry"], fields: ["Item", "Type|select|Autoclave,Chemical", "Batch", "Operator", "Expiry|date"] },
+            visitor: { title: "Visitor Pass", cols: ["PassID", "Visitor", "Patient", "Relation", "Gate", "In", "Out"], fields: ["Visitor", "Patient|link|patient", "Relation", "Gate", "In|time", "Out|time"] },
+            quality: { title: "Quality/Compliance", cols: ["ID", "Category", "Dept", "Desc", "Risk", "Assigned"], fields: ["Category|select|Error,Failure", "Dept", "Desc", "Risk|select|Low,High,Critical", "Assigned"] },
+            feedback: { title: "Grievance/Feedback", cols: ["ID", "Patient", "Rating", "Comments", "Status", "Resolution"], fields: ["Patient|link|patient", "Rating|select|5,4,3,2,1", "Comments", "Status|select|Open,Resolved", "Resolution"] },
+            dietary: { title: "Kitchen/Dietary", cols: ["DietID", "Patient", "Plan", "Allergies", "Morning", "Specialist"], fields: ["Patient|link|patient", "Plan|select|Regular,Liquid,Diabetic", "Allergies", "Morning", "Specialist"] },
+            ambulance: { title: "Ambulance/Fleet", cols: ["TripID", "Vehicle", "Driver", "Dest", "Status", "Odo"], fields: ["Vehicle", "Driver", "Dest", "Status|select|Available,In-Trip", "Odo|number"] },
+            inventory: { title: "Hospital Assets", cols: ["AssetID", "Item", "Cat", "Dept", "Maint", "Warranty"], fields: ["Item", "Cat|select|Surgical,Electronic", "Dept", "Maint|date", "Warranty|date"] },
+            hr: { title: "Staff/HR", cols: ["StaffID", "Name", "Role", "Dept", "JoinDate", "Salary"], fields: ["Name", "Role|select|Doctor,Nurse,Admin", "Dept", "JoinDate|date", "Salary|number"] },
+            
+            // ADVANCED ENTERPRISE ADDITIONS
+            emr: { title: "Patient EMR Timeline", isTimeline: true },
+            portal: { title: "Patient Portal", isPortal: true }
+        };
+
+        let db = {}; 
+        Object.keys(modules).forEach(m => db[m] = []);
+        let currentModule = 'dash';
+        let editIndex = -1;
+
+        function initNav() {
+            const nav = document.getElementById('main-nav');
+            Object.keys(modules).forEach(m => {
+                const div = document.createElement('div');
+                div.className = `nav-item ${m==='dash'?'active':''}`;
+                div.innerHTML = modules[m].title;
+                div.onclick = (e) => switchModule(m, e);
+                nav.appendChild(div);
+            });
+            updateStats();
+        }
+
+        function switchModule(key, e) {
+            currentModule = key;
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById('active-title').innerText = modules[key].title;
+
+            document.getElementById('dash-view').style.display = modules[key].isDash ? 'block' : 'none';
+            document.getElementById('common-view').style.display = (!modules[key].isDash && !modules[key].isTimeline && !modules[key].isPortal) ? 'block' : 'none';
+            document.getElementById('timeline-view').style.display = modules[key].isTimeline ? 'block' : 'none';
+
+            if(modules[key].isTimeline) renderTimeline();
+            if(!modules[key].isDash && !modules[key].isTimeline) renderTable();
+            if(modules[key].isDash) updateStats();
+        }
+
+        function renderTable() {
+            const mod = modules[currentModule];
+            document.getElementById('table-title').innerText = mod.title;
+            let h = "<tr>";
+            mod.cols.forEach(c => h += `<th>${c}</th>`);
+            h += "<th>Action</th></tr>";
+            document.getElementById('thead').innerHTML = h;
+
+            let b = "";
+            db[currentModule].forEach((row, i) => {
+                b += "<tr>";
+                Object.values(row).forEach(v => b += `<td>${v}</td>`);
+                b += `<td><button class="btn btn-edit" onclick="openModal(${i})">Edit</button></td></tr>`;
+            });
+            document.getElementById('tbody').innerHTML = b || "<tr><td colspan='20'>No Records Available.</td></tr>";
+        }
+
+        function openModal(idx = -1) {
+            editIndex = idx;
+            const mod = modules[currentModule];
+            document.getElementById('modalTitle').innerText = mod.title;
+            let html = "";
+            mod.fields.forEach(f => {
+                const [label, type, opts] = f.split('|');
+                html += `<div class="form-group"><label>${label}</label>`;
+                if(type === 'select') {
+                    html += `<select id="f-${label}">` + opts.split(',').map(o => `<option>${o}</option>`).join('') + `</select>`;
+                } else if(type === 'link') {
+                    const source = db[opts].map(x => x.name || x.item || x.id);
+                    html += `<select id="f-${label}" onchange="checkCDSS(this.value, '${label}')">` + source.map(s => `<option>${s}</option>`).join('') + `</select>`;
+                } else {
+                    html += `<input type="${type||'text'}" id="f-${label}">`;
+                }
+                html += `</div>`;
+            });
+            document.getElementById('formFields').innerHTML = html;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        // CDSS ALERT LOGIC (Smart Allergy Check)
+        function checkCDSS(val, label) {
+            if(currentModule === 'billing' && label === 'Item') {
+                const patientName = document.getElementById('f-Patient').value;
+                const patient = db.patient.find(p => p.name === patientName);
+                const item = db.pharmacy.find(p => p.name === val);
+                
+                if(patient && item && patient.allergies.toLowerCase().includes(item.name.toLowerCase())) {
+                    const alert = document.getElementById('smart-alert');
+                    alert.innerHTML = `⚠️ CRITICAL ALERT: Patient "${patientName}" is ALLERGIC to "${item.name}". Please review prescription immediately!`;
+                    alert.style.display = 'block';
+                } else {
+                    document.getElementById('smart-alert').style.display = 'none';
+                }
+            }
+        }
+
+        document.getElementById('recordForm').onsubmit = (e) => {
+            e.preventDefault();
+            const mod = modules[currentModule];
+            let row = { id: Math.random().toString(36).substr(2, 5).toUpperCase() };
+            mod.fields.forEach(f => {
+                const label = f.split('|')[0];
+                row[label.toLowerCase()] = document.getElementById(`f-${label}`).value;
+            });
+
+            // AUTO-SYNC LOGIC (Stock reduction)
+            if(currentModule === 'billing') {
+                const item = db.pharmacy.find(p => p.name === row.item);
+                if(item) item.qty = parseInt(item.qty) - 1;
+            }
+
+            db[currentModule].push(row);
+            closeModal();
+            renderTable();
+        };
+
+        function renderTimeline() {
+            let html = "";
+            const patients = db.patient;
+            if(patients.length === 0) {
+                html = "<p>No patients registered to generate a timeline.</p>";
+            } else {
+                patients.forEach(p => {
+                    html += `<div class='card'><h4>History for: ${p.name}</h4>`;
+                    // Search all modules for this patient's name
+                    Object.keys(db).forEach(m => {
+                        db[m].forEach(record => {
+                            if(record.patient === p.name || record.mother === p.name) {
+                                html += `<div class="timeline-item"><span class="time-tag">${modules[m].title}</span><br>${JSON.stringify(record)}</div>`;
+                            }
+                        });
+                    });
+                    html += `</div>`;
+                });
+            }
+            document.getElementById('timeline-content').innerHTML = html;
+        }
+
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+        function updateStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="stat-card"><label>Global Patients</label><div class="stat-val">${db.patient.length}</div></div>
+                <div class="stat-card" style="border-color: #c02525;"><label>Pharmacy Stock</label><div class="stat-val">${db.pharmacy.reduce((acc, i) => acc + parseInt(i.qty || 0), 0)} Units</div></div>
+                <div class="stat-card"><label>Total Billing</label><div class="stat-val">$${db.billing.reduce((acc, i) => acc + parseInt(i.total || 0), 0)}</div></div>
+            `;
+        }
+
+        initNav();
+    </script>
+</body>
+</html>
