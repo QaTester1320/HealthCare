@@ -37,7 +37,7 @@
     padding: 12px 15px;
     border-radius: 6px;
     cursor: pointer;
-    color: #fff;
+    color: #000000;
     transition: 0.2s;
     margin-bottom: 2px;
     display: flex;
@@ -53,19 +53,19 @@
 
         /* Main Content */
         .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .top-bar { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .top-bar { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; color:balck;}
         .search-box { background: var(--bg); border: 1px solid var(--border); color: white; padding: 8px 15px; border-radius: 4px; width: 350px; outline: none; }
         .content-area { flex: 1; padding: 25px; overflow-y: auto; }
 
         /* Alerts & UI Elements */
         .alert-box { background: var(--warning); color: black; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; font-weight: 600; border-left: 5px solid #000; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; color:black;}
         .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
 th {
     text-align: left;
-    color: #66d1c8;
+    color: #0f1010;
     padding: 12px;
     border-bottom: 2px solid var(--border);
     font-size: 1 rem;
@@ -96,10 +96,12 @@ th {
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
       .stat-card {
-    background: #f6f3f3;
+    background: #7a9ca1;
     padding: 15px;
     border-radius: 6px;
     border-bottom: 4px solid #28d0c2;
+    color: black;
+    font-weight: bold;
 }
         .stat-val { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
 
@@ -127,7 +129,7 @@ th {
                 <div class="stats-grid" id="stats-container"></div>
                 <div class="card">
                     <h3>Smart System Triggers Active</h3>
-                    <ul style="margin: 15px; color: var(--text-dim); font-size: 0.85rem; line-height: 1.6;">
+                    <ul style="margin: 15px; color: black; font-size: 0.85rem; line-height: 1.6;">
                         <li><b>CDSS:</b> Automatic Allergy Checking between Pharmacy & Patient profiles.</li>
                         <li><b>Auto-Sync:</b> Pharmacy stock decreases automatically on Billing.</li>
                         <li><b>Interoperability:</b> All 25+ modules share a unified Patient ID pool.</li>
